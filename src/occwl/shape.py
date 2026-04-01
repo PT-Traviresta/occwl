@@ -5,7 +5,8 @@ import numpy as np
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeVertex
 from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
-from OCC.Core.BRepTools import BRepTools_ShapeSet
+from OCC.Core.BRep import BRep_Builder
+from OCC.Core.BRepTools import BRepTools_ShapeSet, breptools
 from OCC.Core.Extrema import Extrema_ExtFlag_MIN
 from OCC.Core.Message import Message_ProgressRange
 from OCC.Core.gp import gp_Ax1, gp_Trsf
@@ -221,17 +222,23 @@ class Shape:
         shapes_set = BRepTools_ShapeSet(with_triangles)
         # shapes_set.SetWithNormals(with_normals) # Not in OCC 7.5.0
 
-        for shp in shapes:
-            shapes_set.Add(shp.topods_shape())
+        #for shp in shapes:
+        #    shapes_set.Add(shp.topods_shape())
+        if len(shapes) == 1:
+            compound = shapes[0].topods_shape()
+        else:
+            compound = TopoDS_Compound()
+            builder = BRep_Builder()
+            builder.MakeCompound(compound)
+            for shp in shapes:
+                builder.Add(compound, shp.topods_shape())
+
         if format_version is not None:
             shapes_set.SetFormatNb(format_version)
 
-
         with open(filename, "w") as fp:
-            s = shapes_set.WriteToString()
+            s = shapes_set.WriteToString(compound)
             fp.write(s)
-
-
 
     def reversed(self):
         """
